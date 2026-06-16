@@ -24,8 +24,8 @@ services:
     restart: unless-stopped
 
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
 
     volumes:
       - ./grafana_data:/var/lib/grafana
@@ -41,6 +41,13 @@ services:
     networks:
       - monitoring
 
+#volumes:
+#  grafana_data:
+#    driver: local
+#  prometheus_data:
+#     driver: local
+
 networks:
   monitoring:
+
 
