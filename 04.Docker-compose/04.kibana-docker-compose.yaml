@@ -1,0 +1,69 @@
+## docker-compose.yaml
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+    container_name: elasticsearch
+    restart: unless-stopped
+
+    environment:
+      node.name: elasticsearch
+      cluster.name: es-docker-cluster
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"  # set to true + add certs for TLS
+      ELASTIC_PASSWORD: changeme                # set 'elastic' user password
+      ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ./es_data:/usr/share/elasticsearch/data  ### ES runs as uid 1000 inside the container: chown -R 1000:1000 es_data and chmod -R 775 es_data
+
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - elastic
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:changeme http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.15.1
+    container_name: kibana
+    restart: unless-stopped
+
+    environment:
+      SERVER_NAME: kibana
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic # elastic or, kibana_system
+      ELASTICSEARCH_PASSWORD: changeme
+
+    ports:
+      - "5601:5601"
+    networks:
+      - elastic
+
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+
+#volumes:
+#  es_data:
+#    driver: local
+
+networks:
+  elastic:
+
